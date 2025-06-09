@@ -1,0 +1,62 @@
+.htmx-indicator{
+  opacity:0 !important;
+  transition: opacity 0ms linear !important;
+}
+
+.htmx-request.htmx-indicator{
+  opacity:1 !important;
+  transition: opacity 250ms linear !important;
+  transition-delay: 250ms !important;
+}
+
+/*.htmx-request .htmx-indicator{*/
+/*  @inherit: .htmx-request.htmx-indicator;*/
+/*}*/
+
+.loader-box {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 100px;
+  height: 100px;
+  /*border: 2px dotted rgb(96 139 168);*/
+  background: #2e2e2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-spinner {
+  width: 40px;
+  aspect-ratio: 1;
+  --c: linear-gradient(#ffffff 0 0, #ffffff);
+  --r1: radial-gradient(farthest-side at bottom, #ffffff 93%, #0000);
+  --r2: radial-gradient(farthest-side at top, #ffffff 93%, #0000);
+  background:
+          var(--c) ,var(--r1),var(--r2),
+          var(--c) ,var(--r1),var(--r2),
+          var(--c) ,var(--r1),var(--r2);
+  background-repeat: no-repeat;
+  animation: loader-frames 1s infinite alternate;
+}
+
+@keyframes loader-frames {
+  0%,25% {
+    background-size: 8px 0,8px 4px,8px 4px,8px 0,8px 4px,8px 4px,8px 0,8px 4px,8px 4px;
+    background-position: 0 50%,0 calc(50% - 2px),0 calc(50% + 2px),50% 50%,50% calc(50% - 2px),50% calc(50% + 2px),100% 50%,100% calc(50% - 2px),100% calc(50% + 2px);
+  }
+  50% {
+    background-size: 8px 100%,8px 4px,8px 4px,8px 0,8px 4px,8px 4px,8px 0,8px 4px,8px 4px;
+    background-position: 0 50%,0 calc(0% - 2px),0 calc(100% + 2px),50% 50%,50% calc(50% - 2px),50% calc(50% + 2px),100% 50%,100% calc(50% - 2px),100% calc(50% + 2px);
+  }
+  75% {
+    background-size: 8px 100%,8px 4px,8px 4px,8px 100%,8px 4px,8px 4px,8px 0,8px 4px,8px 4px;
+    background-position: 0 50%,0 calc(0% - 2px),0 calc(100% + 2px),50% 50%,50% calc(0% - 2px),50% calc(100% + 2px),100% 50%,100% calc(50% - 2px),100% calc(50% + 2px);
+  }
+  95%,100% {
+    background-size: 8px 100%,8px 4px, 8px 4px,8px 100%,8px 4px,8px 4px,8px 100%,8px 4px,8px 4px;
+    background-position: 0 50%,0 calc(0% - 2px),0 calc(100% + 2px),50% 50%,50% calc(0% - 2px),50% calc(100% + 2px),100% 50%,100% calc(0% - 2px),100% calc(100% + 2px);
+  }
+}

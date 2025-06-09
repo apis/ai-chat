@@ -1,0 +1,35 @@
+.main-header {
+    color: var(--colorHeadline);
+    background-color: var(--colorBackground);
+
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    height: 86px;
+    align-content: center;
+}
+
+.page-title-image {
+    flex: 0 74px;
+}
+
+.page-title-text {
+    flex: 1;
+}
+
+/*.page-image {*/
+/*    height: 64px;*/
+/*    width: 64px;*/
+/*}*/
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+}
+
+.page-subtitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+

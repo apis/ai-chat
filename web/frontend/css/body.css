@@ -1,0 +1,38 @@
+:root {
+    --colorBackground: hsl(13, 16%, 29%);
+    --colorHeadline: hsl(60, 100%, 100%);
+    --colorParagraph: hsl(22, 100%, 96%);
+    --colorButton: hsl(14, 100%, 84%);
+    --colorButtonText: hsl(13, 22%, 13%);
+
+    --colorIllustrationStroke: hsl(13, 29%, 6%);
+    --colorIllustrationMain: hsl(22, 100%, 96%);
+
+    font-family: 'Noto Sans', sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+
+    color: var(--colorParagraph);
+    background-color: var(--colorBackground);
+
+    text-rendering: optimizeLegibility;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    font-size: 16px;
+}
+
+#main {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.width-values {
+    /*max-width: 1280px;*/
+    min-width: 800px;
+    margin: 0 0;
+    padding: 0 2rem;
+}

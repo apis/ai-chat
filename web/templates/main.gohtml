@@ -1,0 +1,37 @@
+<div hx-ext="ws" ws-connect="/api/notifications">
+</div>
+<div class="main-header width-values">
+    <div class="page-title-text">
+        <span class="page-title">Ricky</span>
+        <span class="page-subtitle"><sup>[ chatty assistant ]</sup></span>
+    </div>
+    <div class="page-title-image">
+        <img class="page-image" src="/chat/logo-s.png" alt="Logo"/>
+    </div>
+</div>
+<div class="main-content width-values">
+    <div class="chat-messages">
+        {{template "chat-messages.gohtml" .}}
+    </div>
+</div>
+<div class="main-footer width-values">
+    <div class="user-input-box">
+        <textarea class="user-input" name="user-input" rows="3"  placeholder="Ask Ricky"></textarea>
+        <div class="submit-button-box">
+            <button class="button"
+                    role="button"
+                    hx-post="/api/ask"
+                    hx-include="[name='user-input']"
+                    hx-target=".main-content"
+                    hx-swap="none scroll:bottom"
+                    hx-indicator="#loader">
+                Send
+            </button>
+        </div>
+    </div>
+    <div class="disclaimer-box">
+        <div class="disclaimer">
+            Ricky is experimental bot UI and AI, so don't expect much at this point
+        </div>
+    </div>
+</div>

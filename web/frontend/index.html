@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo-s.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ricky</title>
+  </head>
+  <script>
+    document.fonts.onloadingdone = () => {
+      document.body.style.visibility = 'visible';
+    }
+  </script>
+  <body style="visibility: hidden;">
+    <div id="loader" class="htmx-indicator" style="opacity:0;">
+      <div class="loader-box">
+        <div class="loader-spinner"></div>
+      </div>
+    </div>
+    <div id="main" hx-get="/api/main" hx-swap="innerHTML" hx-trigger="load" hx-indicator="#loader"></div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

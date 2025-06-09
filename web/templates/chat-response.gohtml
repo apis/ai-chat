@@ -1,0 +1,25 @@
+{{if eq .New true}}
+  <div hx-swap-oob="beforeend:#main .chat-messages">
+    <div class="chat-message user">
+      <div class="raw">
+        {{.UserMessageContent}}
+      </div>
+      <div class="formatted"></div>
+    </div>
+  </div>
+  <div hx-swap-oob="beforeend:#main .chat-messages">
+    <div class="chat-message assistant">
+      <div class="raw">
+        {{.AssistantMessageContent}}
+      </div>
+      <div class="formatted"></div>
+    </div>
+  </div>
+{{else}}
+  <div hx-swap-oob="innerHTML:#main .chat-message.assistant:last-child">
+    <div class="raw">
+      {{.AssistantMessageContent}}
+    </div>
+    <div class="formatted"></div>
+  </div>
+{{end}}
