@@ -8,12 +8,14 @@ import (
 )
 
 type SessionManager struct {
-	chatSessions map[uuid.UUID]chatSession.ChatSession
+	chatSessions     map[uuid.UUID]chatSession.ChatSession
+	calculatorMcpUrl string
 }
 
-func New() *SessionManager {
+func New(calculatorMcpUrl string) *SessionManager {
 	sessionManager := &SessionManager{
-		chatSessions: make(map[uuid.UUID]chatSession.ChatSession),
+		chatSessions:     make(map[uuid.UUID]chatSession.ChatSession),
+		calculatorMcpUrl: calculatorMcpUrl,
 	}
 	return sessionManager
 }
@@ -48,7 +50,7 @@ func (instance *SessionManager) AddSession(id uuid.UUID, responseFunc chatSessio
 	//}
 	//]`
 
-	chat, err := chatSession.New(responseFunc, "")
+	chat, err := chatSession.New(responseFunc, instance.calculatorMcpUrl)
 	if err != nil {
 		return fmt.Errorf("chatSession.New() failed: %w", err)
 	}

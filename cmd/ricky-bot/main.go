@@ -54,7 +54,7 @@ func main() {
 		log.Panic().Err(err).Msg("template parsing failed")
 	}
 
-	sessionManager := sessions.New()
+	sessionManager := sessions.New(appConfig.CalculatorMcpUrl)
 	notificationServer := websocketServer.New()
 	handlers := httpHandlers.New(templates, sessionManager, notificationServer)
 

@@ -1,145 +1,139 @@
 package main
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
-
-	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
+	"log"
+	"net/http"
+	"os"
 )
 
+// McphostConfig holds the server configuration
+type McphostConfig struct {
+	Host string `json:"host"`
+	Port int    `json:"port"`
+}
+
+// CalculationRequest represents the expected JSON input for calculations
+type CalculationRequest struct {
+	A float64 `json:"a"`
+	B float64 `json:"b"`
+}
+
+// CalculationResponse represents the JSON output for successful calculations
+type CalculationResponse struct {
+	Result float64 `json:"result"`
+}
+
+// ErrorResponse represents the JSON output for errors
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func main() {
-	// Create a new MCP server
-	s := server.NewMCPServer(
-		"Calculator 🧮",
-		"1.0.0",
-		server.WithToolCapabilities(false),
-	)
+	// Load configuration
+	configFile, err := os.Open("cmd/calculator-mcp/mcphost.config.json")
+	if err != nil {
+		log.Fatalf("Failed to open config file: %v", err)
+	}
+	defer configFile.Close()
 
-	// Add add tool
-	addTool := mcp.NewTool("calculator.add",
-		mcp.WithDescription("Add two numbers"),
-		mcp.WithNumber("a",
-			mcp.Required(),
-			mcp.Description("First number"),
-		),
-		mcp.WithNumber("b",
-			mcp.Required(),
-			mcp.Description("Second number"),
-		),
-	)
+	var config McphostConfig
+	decoder := json.NewDecoder(configFile)
+	if err := decoder.Decode(&config); err != nil {
+		log.Fatalf("Failed to decode config: %v", err)
+	}
 
-	// Add subtract tool
-	subtractTool := mcp.NewTool("calculator.subtract",
-		mcp.WithDescription("Subtract second number from first number"),
-		mcp.WithNumber("a",
-			mcp.Required(),
-			mcp.Description("First number"),
-		),
-		mcp.WithNumber("b",
-			mcp.Required(),
-			mcp.Description("Second number"),
-		),
-	)
+	// Create a new HTTP ServeMux
+	mux := http.NewServeMux()
 
-	// Add multiply tool
-	multiplyTool := mcp.NewTool("calculator.multiply",
-		mcp.WithDescription("Multiply two numbers"),
-		mcp.WithNumber("a",
-			mcp.Required(),
-			mcp.Description("First number"),
-		),
-		mcp.WithNumber("b",
-			mcp.Required(),
-			mcp.Description("Second number"),
-		),
-	)
+	// Register handlers
+	mux.HandleFunc("/tool/calculator.add", addHandler)
+	mux.HandleFunc("/tool/calculator.subtract", subtractHandler)
+	mux.HandleFunc("/tool/calculator.multiply", multiplyHandler)
+	mux.HandleFunc("/tool/calculator.divide", divideHandler)
 
-	// Add divide tool
-	divideTool := mcp.NewTool("calculator.divide",
-		mcp.WithDescription("Divide first number by second number"),
-		mcp.WithNumber("a",
-			mcp.Required(),
-			mcp.Description("First number (dividend)"),
-		),
-		mcp.WithNumber("b",
-			mcp.Required(),
-			mcp.Description("Second number (divisor)"),
-		),
-	)
-
-	// Add tool handlers
-	s.AddTool(addTool, addHandler)
-	s.AddTool(subtractTool, subtractHandler)
-	s.AddTool(multiplyTool, multiplyHandler)
-	s.AddTool(divideTool, divideHandler)
-
-	// Start the stdio server
-	if err := server.ServeStdio(s); err != nil {
-		fmt.Printf("Server error: %v\n", err)
+	// Start the HTTP server
+	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
+	log.Printf("Starting server on %s\n", addr)
+	if err := http.ListenAndServe(addr, mux); err != nil {
+		log.Fatalf("Server error: %v\n", err)
 	}
 }
 
-func addHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	a, err := request.RequireFloat("a")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+func writeJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("Error encoding JSON response: %v", err)
 	}
-
-	b, err := request.RequireFloat("b")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
-	}
-
-	result := a + b
-	return mcp.NewToolResultText(fmt.Sprintf("%.2f", result)), nil
 }
 
-func subtractHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	a, err := request.RequireFloat("a")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+func addHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONResponse(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Only POST method is allowed"})
+		return
 	}
 
-	b, err := request.RequireFloat("b")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+	var req CalculationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONResponse(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid JSON request body"})
+		return
 	}
 
-	result := a - b
-	return mcp.NewToolResultText(fmt.Sprintf("%.2f", result)), nil
+	result := req.A + req.B
+	writeJSONResponse(w, http.StatusOK, CalculationResponse{Result: result})
 }
 
-func multiplyHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	a, err := request.RequireFloat("a")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+func subtractHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONResponse(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Only POST method is allowed"})
+		return
 	}
 
-	b, err := request.RequireFloat("b")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+	var req CalculationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONResponse(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid JSON request body"})
+		return
 	}
 
-	result := a * b
-	return mcp.NewToolResultText(fmt.Sprintf("%.2f", result)), nil
+	result := req.A - req.B
+	writeJSONResponse(w, http.StatusOK, CalculationResponse{Result: result})
 }
 
-func divideHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	a, err := request.RequireFloat("a")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+func multiplyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONResponse(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Only POST method is allowed"})
+		return
 	}
 
-	b, err := request.RequireFloat("b")
-	if err != nil {
-		return mcp.NewToolResultError(err.Error()), nil
+	var req CalculationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONResponse(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid JSON request body"})
+		return
 	}
 
-	if b == 0 {
-		return mcp.NewToolResultError("Division by zero is not allowed"), nil
+	result := req.A * req.B
+	writeJSONResponse(w, http.StatusOK, CalculationResponse{Result: result})
+}
+
+func divideHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONResponse(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "Only POST method is allowed"})
+		return
 	}
 
-	result := a / b
-	return mcp.NewToolResultText(fmt.Sprintf("%.2f", result)), nil
+	var req CalculationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONResponse(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid JSON request body"})
+		return
+	}
+
+	if req.B == 0 {
+		writeJSONResponse(w, http.StatusBadRequest, ErrorResponse{Error: "Division by zero is not allowed"})
+		return
+	}
+
+	result := req.A / req.B
+	writeJSONResponse(w, http.StatusOK, CalculationResponse{Result: result})
 }
