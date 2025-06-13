@@ -17,7 +17,11 @@ build: web app
 # build go binaries
 app:
   @echo "{{set-echo-color}}*** building go binaries ***{{unset-echo-color}}"
-  go build -v ./cmd/...
+  go fmt ./...
+  go mod tidy
+  go build -v ./cmd/ricky-bot
+  go build -v ./cmd/calculator
+  go build -v ./cmd/calculator-mcp
 
 # just install web dependencies
 [working-directory: "web/frontend"]
