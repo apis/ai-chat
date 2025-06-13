@@ -40,3 +40,7 @@ _npm-version:
 
 _go-version:
   @echo "{{set-echo-color}}*** {{go-version}} ***{{unset-echo-color}}"
+
+run:
+    @echo "{{set-echo-color}}*** running application ***{{unset-echo-color}}"
+    ./ricky-bot
