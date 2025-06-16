@@ -165,6 +165,7 @@ func (instance *ChatHandlers) chatBlockResponseHandler(id uuid.UUID) func(respon
 		if err := instance.templates.ExecuteTemplate(&buffer, templateName, uiResponse); err != nil {
 			log.Error().Err(err).Str("template_name", templateName).Msg("templates.ExecuteTemplate() failed")
 		}
+		log.Debug().Str("user_message", response.ChatBlock.UserMessage).Str("assistant_message", response.ChatBlock.AssistantMessage).Msg("ChatBlockResponse")
 		instance.notificationServer.Publish(id, buffer.Bytes())
 	}
 }

@@ -73,7 +73,7 @@ func NewAgent(ctx context.Context, config *AgentConfig) (*Agent, error) {
 }
 
 // GenerateWithLoop processes messages with a custom loop that displays tool calls in real-time
-func (a *Agent) GenerateWithLoop(ctx context.Context, messages []*schema.Message,
+func (instance *Agent) GenerateWithLoop(ctx context.Context, messages []*schema.Message,
 	onToolCall ToolCallHandler, onToolExecution ToolExecutionHandler, onToolResult ToolResultHandler, onResponse ResponseHandler, onToolCallContent ToolCallContentHandler) (*schema.Message, error) {
 
 	// Create a copy of messages to avoid modifying the original
@@ -81,20 +81,20 @@ func (a *Agent) GenerateWithLoop(ctx context.Context, messages []*schema.Message
 	copy(workingMessages, messages)
 
 	// Add system prompt if provided
-	if a.systemPrompt != "" {
+	if instance.systemPrompt != "" {
 		hasSystemMessage := false
 		if len(workingMessages) > 0 && workingMessages[0].Role == schema.System {
 			hasSystemMessage = true
 		}
 
 		if !hasSystemMessage {
-			systemMsg := schema.SystemMessage(a.systemPrompt)
+			systemMsg := schema.SystemMessage(instance.systemPrompt)
 			workingMessages = append([]*schema.Message{systemMsg}, workingMessages...)
 		}
 	}
 
 	// Get available tools
-	availableTools := a.toolManager.GetTools()
+	availableTools := instance.toolManager.GetTools()
 	var toolInfos []*schema.ToolInfo
 	toolMap := make(map[string]tool.BaseTool)
 
@@ -108,9 +108,9 @@ func (a *Agent) GenerateWithLoop(ctx context.Context, messages []*schema.Message
 	}
 
 	// Main loop
-	for step := 0; step < a.maxSteps; step++ {
+	for step := 0; step < instance.maxSteps; step++ {
 		// Call the LLM
-		response, err := a.model.Generate(ctx, workingMessages, model.WithTools(toolInfos))
+		response, err := instance.model.Generate(ctx, workingMessages, model.WithTools(toolInfos))
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate response: %v", err)
 		}
@@ -195,11 +195,11 @@ func (a *Agent) GenerateWithLoop(ctx context.Context, messages []*schema.Message
 }
 
 // GetTools returns the list of available tools
-func (a *Agent) GetTools() []tool.BaseTool {
-	return a.toolManager.GetTools()
+func (instance *Agent) GetTools() []tool.BaseTool {
+	return instance.toolManager.GetTools()
 }
 
 // Close closes the agent and cleans up resources
-func (a *Agent) Close() error {
-	return a.toolManager.Close()
+func (instance *Agent) Close() error {
+	return instance.toolManager.Close()
 }

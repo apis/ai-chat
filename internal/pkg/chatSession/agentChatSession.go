@@ -33,7 +33,7 @@ func NewAgentChatSession(agent *agent.Agent, responseFunc ChatBlockResponseFunc)
 }
 
 // EnqueueMessage adds a user message to the chat session and processes it
-func (a *AgentChatSession) EnqueueMessage(message string) error {
+func (instance *AgentChatSession) EnqueueMessage(message string) error {
 	// Create a new chat block for this message
 	chatBlock := ChatBlock{
 		UserMessage: message,
@@ -42,45 +42,45 @@ func (a *AgentChatSession) EnqueueMessage(message string) error {
 	}
 
 	// Add the chat block to the list
-	a.messagesMutex.Lock()
-	a.chatBlocks = append(a.chatBlocks, chatBlock)
-	a.currentChatBlock = &a.chatBlocks[len(a.chatBlocks)-1]
-	a.messagesMutex.Unlock()
+	instance.messagesMutex.Lock()
+	instance.chatBlocks = append(instance.chatBlocks, chatBlock)
+	instance.currentChatBlock = &instance.chatBlocks[len(instance.chatBlocks)-1]
+	instance.messagesMutex.Unlock()
 
 	// Send initial UI update with user message
-	a.responseFunc(ChatBlockResponse{
+	instance.responseFunc(ChatBlockResponse{
 		ChatBlock: chatBlock,
 		New:       true,
 	})
 
 	// Add user message to the messages list
 	userMessage := schema.UserMessage(message)
-	a.messagesMutex.Lock()
-	a.messages = append(a.messages, userMessage)
-	a.messagesMutex.Unlock()
+	instance.messagesMutex.Lock()
+	instance.messages = append(instance.messages, userMessage)
+	instance.messagesMutex.Unlock()
 
-	// Process the message with the agent in a goroutine
-	go a.processMessage()
+	// Process the message with the agent in instance goroutine
+	go instance.processMessage()
 
 	return nil
 }
 
 // processMessage processes the current message with the agent
-func (a *AgentChatSession) processMessage() {
+func (instance *AgentChatSession) processMessage() {
 	// Ensure only one message is processed at a time
-	a.processingMutex.Lock()
-	defer a.processingMutex.Unlock()
+	instance.processingMutex.Lock()
+	defer instance.processingMutex.Unlock()
 
 	// Create a copy of messages to avoid race conditions
-	a.messagesMutex.RLock()
-	messagesCopy := make([]*schema.Message, len(a.messages))
-	copy(messagesCopy, a.messages)
-	currentChatBlock := a.currentChatBlock
-	a.messagesMutex.RUnlock()
+	instance.messagesMutex.RLock()
+	messagesCopy := make([]*schema.Message, len(instance.messages))
+	copy(messagesCopy, instance.messages)
+	currentChatBlock := instance.currentChatBlock
+	instance.messagesMutex.RUnlock()
 
 	// Call the agent
 	ctx := context.Background()
-	response, err := a.agent.GenerateWithLoop(ctx, messagesCopy,
+	response, err := instance.agent.GenerateWithLoop(ctx, messagesCopy,
 		// Tool call handler
 		func(toolName, toolArgs string) {
 			log.Info().Str("tool", toolName).Str("args", toolArgs).Msg("Tool call")
@@ -104,13 +104,13 @@ func (a *AgentChatSession) processMessage() {
 		// Response handler
 		func(content string) {
 			// Update the chat block with the assistant's response
-			a.messagesMutex.Lock()
+			instance.messagesMutex.Lock()
 			currentChatBlock.AssistantMessage = content
 			currentChatBlock.Completed = true
-			a.messagesMutex.Unlock()
+			instance.messagesMutex.Unlock()
 
 			// Send UI update
-			a.responseFunc(ChatBlockResponse{
+			instance.responseFunc(ChatBlockResponse{
 				ChatBlock: *currentChatBlock,
 				New:       false,
 			})
@@ -118,12 +118,12 @@ func (a *AgentChatSession) processMessage() {
 		// Tool call content handler
 		func(content string) {
 			// Update the chat block with intermediate content
-			a.messagesMutex.Lock()
+			instance.messagesMutex.Lock()
 			currentChatBlock.AssistantMessage = content
-			a.messagesMutex.Unlock()
+			instance.messagesMutex.Unlock()
 
 			// Send UI update
-			a.responseFunc(ChatBlockResponse{
+			instance.responseFunc(ChatBlockResponse{
 				ChatBlock: *currentChatBlock,
 				New:       false,
 			})
@@ -132,13 +132,13 @@ func (a *AgentChatSession) processMessage() {
 
 	if err != nil {
 		log.Error().Err(err).Msg("Agent.GenerateWithLoop failed")
-		a.messagesMutex.Lock()
+		instance.messagesMutex.Lock()
 		currentChatBlock.Failed = true
 		currentChatBlock.AssistantMessage = "Error: " + err.Error()
-		a.messagesMutex.Unlock()
+		instance.messagesMutex.Unlock()
 
 		// Send UI update with error
-		a.responseFunc(ChatBlockResponse{
+		instance.responseFunc(ChatBlockResponse{
 			ChatBlock: *currentChatBlock,
 			New:       false,
 		})
@@ -146,15 +146,15 @@ func (a *AgentChatSession) processMessage() {
 	}
 
 	// Add assistant response to messages
-	a.messagesMutex.Lock()
-	a.messages = append(a.messages, response)
-	a.messagesMutex.Unlock()
+	instance.messagesMutex.Lock()
+	instance.messages = append(instance.messages, response)
+	instance.messagesMutex.Unlock()
 }
 
 // Shutdown stops the chat session
-func (a *AgentChatSession) Shutdown() {
+func (instance *AgentChatSession) Shutdown() {
 	select {
-	case a.exitRequested <- struct{}{}:
+	case instance.exitRequested <- struct{}{}:
 		log.Info().Msg("AgentChatSession shutdown requested")
 	default:
 		log.Info().Msg("AgentChatSession shutdown already requested")
@@ -162,13 +162,13 @@ func (a *AgentChatSession) Shutdown() {
 }
 
 // ChatBlocks returns the chat blocks
-func (a *AgentChatSession) ChatBlocks() []ChatBlock {
-	a.messagesMutex.RLock()
-	defer a.messagesMutex.RUnlock()
+func (instance *AgentChatSession) ChatBlocks() []ChatBlock {
+	instance.messagesMutex.RLock()
+	defer instance.messagesMutex.RUnlock()
 
 	// Create a copy of the chat blocks to avoid race conditions
-	chatBlocks := make([]ChatBlock, len(a.chatBlocks))
-	copy(chatBlocks, a.chatBlocks)
+	chatBlocks := make([]ChatBlock, len(instance.chatBlocks))
+	copy(chatBlocks, instance.chatBlocks)
 
 	return chatBlocks
 }
