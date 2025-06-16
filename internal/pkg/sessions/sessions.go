@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"ai-chat/internal/agent"
 	"ai-chat/internal/pkg/chatSession"
 	"errors"
 	"fmt"
@@ -24,33 +25,25 @@ func (instance *SessionManager) AddSession(id uuid.UUID, responseFunc chatSessio
 		return errors.New("session with such id already exists")
 	}
 
-	//	jsonTools := `[
-	//{
-	//  "type": "function",
-	//  "function": {
-	//	"name": "extract_list_of_people_from_text",
-	//	"description": "Extract list of people from text",
-	//	"parameters": {
-	//		"type": "object",
-	//			"properties": {
-	//			"name": {
-	//				"type": "string",
-	//					"description": "Name of the person"
-	//			},
-	//			"title": {
-	//				"type": "string",
-	//					"description": "Title of the person"
-	//			}
-	//		},
-	//		"required": ["name", "title"]
-	//    }
-	//  }
-	//}
-	//]`
-
 	chat, err := chatSession.New(responseFunc, "")
 	if err != nil {
 		return fmt.Errorf("chatSession.New() failed: %w", err)
+	}
+
+	instance.chatSessions[id] = chat
+
+	return nil
+}
+
+func (instance *SessionManager) AddAgentSession(id uuid.UUID, agent *agent.Agent, responseFunc chatSession.ChatBlockResponseFunc) error {
+	_, ok := instance.chatSessions[id]
+	if ok {
+		return errors.New("session with such id already exists")
+	}
+
+	chat, err := chatSession.NewAgentChatSession(agent, responseFunc)
+	if err != nil {
+		return fmt.Errorf("chatSession.NewAgentChatSession() failed: %w", err)
 	}
 
 	instance.chatSessions[id] = chat

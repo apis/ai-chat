@@ -1,16 +1,19 @@
 package httpHandlers
 
 import (
+	"ai-chat/internal/agent"
 	"ai-chat/internal/pkg/chatSession"
 	"ai-chat/internal/pkg/cookies"
 	"ai-chat/internal/pkg/sessions"
 	"ai-chat/internal/pkg/web"
 	"ai-chat/internal/pkg/websocketServer"
 	"bytes"
+	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"html/template"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -18,14 +21,20 @@ type ChatHandlers struct {
 	templates          *template.Template
 	notificationServer websocketServer.WebsocketServer
 	sessionManager     *sessions.SessionManager
+	mcpAgent           *agent.Agent
+	sessionMessages    map[uuid.UUID][]*schema.Message
+	sessionMutex       sync.RWMutex
 }
 
 func New(templates *template.Template, sessionManager *sessions.SessionManager,
-	notificationServer websocketServer.WebsocketServer) *ChatHandlers {
+	notificationServer websocketServer.WebsocketServer, mcpAgent *agent.Agent) *ChatHandlers {
 	return &ChatHandlers{
 		templates:          templates,
 		sessionManager:     sessionManager,
 		notificationServer: notificationServer,
+		mcpAgent:           mcpAgent,
+		sessionMessages:    make(map[uuid.UUID][]*schema.Message),
+		sessionMutex:       sync.RWMutex{},
 	}
 }
 
@@ -47,9 +56,9 @@ func (instance *ChatHandlers) Main(request *http.Request, simulatedDelay int) *w
 			return web.GetEmptyResponse(http.StatusInternalServerError, nil, nil)
 		}
 
-		err = instance.sessionManager.AddSession(id, instance.chatBlockResponseHandler(id))
+		err = instance.sessionManager.AddAgentSession(id, instance.mcpAgent, instance.chatBlockResponseHandler(id))
 		if err != nil {
-			log.Error().Err(err).Msg("sessionManager.AddSession() failed")
+			log.Error().Err(err).Msg("sessionManager.AddAgentSession() failed")
 			return web.GetEmptyResponse(http.StatusInternalServerError, nil, nil)
 		}
 	}
@@ -83,7 +92,11 @@ func (instance *ChatHandlers) Ask(request *http.Request, simulatedDelay int) *we
 	}
 
 	userInput := request.Form.Get("user-input")
+	if userInput == "" {
+		return web.GetEmptyResponse(http.StatusBadRequest, nil, nil)
+	}
 
+	// Enqueue the message to the session
 	err = session.EnqueueMessage(userInput)
 	if err != nil {
 		log.Error().Err(err).Msg("enqueue question failed")
@@ -94,6 +107,53 @@ func (instance *ChatHandlers) Ask(request *http.Request, simulatedDelay int) *we
 
 	headers := map[string]string{"HX-Trigger-After-Swap": "{\"clearUserInput\":\"\"}"}
 	return web.GetEmptyResponse(http.StatusOK, headers, nil)
+}
+
+// Convert schema.Messages to ChatBlocks
+func (instance *ChatHandlers) messagesToChatBlocks(messages []*schema.Message) []chatSession.ChatBlock {
+	var chatBlocks []chatSession.ChatBlock
+
+	// Group messages into conversation blocks
+	var systemMsg, userMsg, assistantMsg string
+	var completed bool
+
+	for i, msg := range messages {
+		switch msg.Role {
+		case schema.System:
+			systemMsg = msg.Content
+		case schema.User:
+			// If we already have a user message, start a new block
+			if userMsg != "" && assistantMsg != "" {
+				chatBlocks = append(chatBlocks, chatSession.ChatBlock{
+					SystemMessage:    systemMsg,
+					UserMessage:      userMsg,
+					AssistantMessage: assistantMsg,
+					Completed:        completed,
+					Failed:           false,
+				})
+				userMsg = ""
+				assistantMsg = ""
+			}
+			userMsg = msg.Content
+			completed = false
+		case schema.Assistant:
+			assistantMsg = msg.Content
+			completed = true
+		}
+
+		// If this is the last message, add the block
+		if i == len(messages)-1 && userMsg != "" {
+			chatBlocks = append(chatBlocks, chatSession.ChatBlock{
+				SystemMessage:    systemMsg,
+				UserMessage:      userMsg,
+				AssistantMessage: assistantMsg,
+				Completed:        completed,
+				Failed:           false,
+			})
+		}
+	}
+
+	return chatBlocks
 }
 
 func (instance *ChatHandlers) chatBlockResponseHandler(id uuid.UUID) func(response chatSession.ChatBlockResponse) {

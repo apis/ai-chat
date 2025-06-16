@@ -1,6 +1,9 @@
 package main
 
 import (
+	"ai-chat/internal/agent"
+	internalConfig "ai-chat/internal/config"
+	"ai-chat/internal/models"
 	"ai-chat/internal/pkg/config"
 	"ai-chat/internal/pkg/httpHandlers"
 	"ai-chat/internal/pkg/sessions"
@@ -54,9 +57,39 @@ func main() {
 		log.Panic().Err(err).Msg("template parsing failed")
 	}
 
+	// Load MCP configuration
+	log.Info().Msg("Loading MCP configuration")
+	mcpConfig, err := internalConfig.LoadMCPConfig(appConfig.McpConfigFile)
+	if err != nil {
+		log.Panic().Err(err).Msg("failed to load MCP configuration")
+	}
+
+	// Create model configuration
+	modelConfig := &models.ProviderConfig{
+		ModelString:  appConfig.ModelName,
+		SystemPrompt: appConfig.SystemPrompt,
+	}
+
+	// Create agent configuration
+	agentConfig := &agent.AgentConfig{
+		ModelConfig:   modelConfig,
+		MCPConfig:     mcpConfig,
+		SystemPrompt:  appConfig.SystemPrompt,
+		MaxSteps:      appConfig.MaxSteps,
+		MessageWindow: appConfig.MessageWindow,
+	}
+
+	// Create the agent
+	ctx := context.Background()
+	mcpAgent, err := agent.NewAgent(ctx, agentConfig)
+	if err != nil {
+		log.Panic().Err(err).Msg("failed to create agent")
+	}
+	defer mcpAgent.Close()
+
 	sessionManager := sessions.New()
 	notificationServer := websocketServer.New()
-	handlers := httpHandlers.New(templates, sessionManager, notificationServer)
+	handlers := httpHandlers.New(templates, sessionManager, notificationServer, mcpAgent)
 
 	listener := createNetListener(appConfig)
 	server := startHttpServer(listener, handlers, notificationServer, appConfig.SimulatedDelay)
