@@ -1,23 +1,22 @@
 package agent
 
 import (
+	"ai-chat/internal/pkg/mcpConfig"
+	"ai-chat/internal/pkg/models"
+	"ai-chat/internal/pkg/tools"
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"ai-chat/internal/config"
-	"ai-chat/internal/models"
-	"ai-chat/internal/tools"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/schema"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// AgentConfig is the config for agent.
+// AgentConfig is the mcpConfig for agent.
 type AgentConfig struct {
 	ModelConfig   *models.ProviderConfig
-	MCPConfig     *config.Config
+	MCPConfig     *mcpConfig.Config
 	SystemPrompt  string
 	MaxSteps      int
 	MessageWindow int

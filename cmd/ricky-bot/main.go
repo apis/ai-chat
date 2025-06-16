@@ -1,11 +1,11 @@
 package main
 
 import (
-	"ai-chat/internal/agent"
-	internalConfig "ai-chat/internal/config"
-	"ai-chat/internal/models"
+	"ai-chat/internal/pkg/agent"
 	"ai-chat/internal/pkg/config"
 	"ai-chat/internal/pkg/httpHandlers"
+	internalConfig "ai-chat/internal/pkg/mcpConfig"
+	"ai-chat/internal/pkg/models"
 	"ai-chat/internal/pkg/sessions"
 	"ai-chat/internal/pkg/staticAssets"
 	"ai-chat/internal/pkg/web"

@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"runtime/debug"
-
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/components"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
 	"github.com/getkin/kin-openapi/openapi3"
 	"google.golang.org/genai"
+	"runtime/debug"
 )
 
 var _ model.ToolCallingChatModel = (*ChatModel)(nil)
@@ -704,4 +703,3 @@ func newPanicErr(info any, stack []byte) error {
 		stack: stack,
 	}
 }
-

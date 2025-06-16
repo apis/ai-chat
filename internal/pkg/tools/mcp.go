@@ -1,11 +1,10 @@
 package tools
 
 import (
+	"ai-chat/internal/pkg/mcpConfig"
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"ai-chat/internal/config"
 	"github.com/bytedance/sonic"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/schema"
@@ -44,7 +43,7 @@ func NewMCPToolManager() *MCPToolManager {
 }
 
 // LoadTools loads tools from MCP servers based on configuration
-func (m *MCPToolManager) LoadTools(ctx context.Context, config *config.Config) error {
+func (m *MCPToolManager) LoadTools(ctx context.Context, config *mcpConfig.Config) error {
 	for serverName, serverConfig := range config.MCPServers {
 		client, err := m.createMCPClient(ctx, serverName, serverConfig)
 		if err != nil {
@@ -178,7 +177,7 @@ func (m *MCPToolManager) Close() error {
 }
 
 // shouldExcludeTool determines if a tool should be excluded based on excludedTools
-func (m *MCPToolManager) shouldExcludeTool(toolName string, serverConfig config.MCPServerConfig) bool {
+func (m *MCPToolManager) shouldExcludeTool(toolName string, serverConfig mcpConfig.MCPServerConfig) bool {
 	// If excludedTools is specified, exclude tools in the list
 	if len(serverConfig.ExcludedTools) > 0 {
 		for _, excludedTool := range serverConfig.ExcludedTools {
@@ -191,7 +190,7 @@ func (m *MCPToolManager) shouldExcludeTool(toolName string, serverConfig config.
 	return false
 }
 
-func (m *MCPToolManager) createMCPClient(ctx context.Context, serverName string, serverConfig config.MCPServerConfig) (client.MCPClient, error) {
+func (m *MCPToolManager) createMCPClient(ctx context.Context, serverName string, serverConfig mcpConfig.MCPServerConfig) (client.MCPClient, error) {
 	if serverConfig.Command != "" {
 		// STDIO client
 		return client.NewStdioMCPClient(serverConfig.Command, nil, serverConfig.Args...)
@@ -217,7 +216,7 @@ func (m *MCPToolManager) initializeClient(ctx context.Context, client client.MCP
 	initRequest := mcp.InitializeRequest{}
 	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
 	initRequest.Params.ClientInfo = mcp.Implementation{
-		Name:    "mcphost",
+		Name:    "ricky-bot",
 		Version: "1.0.0",
 	}
 

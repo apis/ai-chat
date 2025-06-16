@@ -1,11 +1,10 @@
-package config
+package mcpConfig
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
-
-	"github.com/spf13/viper"
 )
 
 // MCPServerConfig represents configuration for an MCP server

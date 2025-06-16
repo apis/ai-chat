@@ -1,18 +1,16 @@
 package models
 
 import (
+	"ai-chat/internal/pkg/models/gemini"
 	"context"
 	"fmt"
-	"os"
-	"strings"
-
 	"github.com/cloudwego/eino-ext/components/model/claude"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
 	"google.golang.org/genai"
-
-	"ai-chat/internal/models/gemini"
+	"os"
+	"strings"
 )
 
 // ProviderConfig holds configuration for creating LLM providers

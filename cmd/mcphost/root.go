@@ -1,21 +1,20 @@
 package main
 
 import (
+	"ai-chat/internal/pkg/agent"
+	"ai-chat/internal/pkg/mcpConfig"
+	"ai-chat/internal/pkg/models"
 	"bufio"
 	"context"
 	"fmt"
-	"io"
-	"log"
-	"os"
-	"strings"
-
-	"ai-chat/internal/agent"
-	"ai-chat/internal/config"
-	"ai-chat/internal/models"
 	"github.com/cloudwego/eino/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
+	"io"
+	"log"
+	"os"
+	"strings"
 )
 
 var (
@@ -33,7 +32,7 @@ var (
 	quietFlag        bool
 	scriptFlag       bool
 	maxSteps         int
-	scriptMCPConfig  *config.Config // Used to override config in script mode
+	scriptMCPConfig  *mcpConfig.Config // Used to override mcpConfig in script mode
 )
 
 var rootCmd = &cobra.Command{
@@ -76,7 +75,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().
-		StringVar(&configFile, "config", "", "config file (default is $HOME/.mcp.json)")
+		StringVar(&configFile, "mcpConfig", "", "mcpConfig file (default is $HOME/.mcp.json)")
 	rootCmd.PersistentFlags().
 		StringVar(&systemPromptFile, "system-prompt", "", "system prompt text or path to system prompt json file")
 	rootCmd.PersistentFlags().
@@ -102,7 +101,7 @@ func init() {
 	flags.StringVar(&anthropicAPIKey, "anthropic-api-key", "", "Anthropic API key")
 	flags.StringVar(&googleAPIKey, "google-api-key", "", "Google (Gemini) API key")
 
-	// Bind flags to viper for config file support
+	// Bind flags to viper for mcpConfig file support
 	viper.BindPFlag("system-prompt", rootCmd.PersistentFlags().Lookup("system-prompt"))
 	viper.BindPFlag("message-window", rootCmd.PersistentFlags().Lookup("message-window"))
 	viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
@@ -136,23 +135,23 @@ func runNormalMode(ctx context.Context) error {
 	}
 
 	// Load configuration
-	var mcpConfig *config.Config
+	var mcpConfig *mcpConfig.Config
 	var err error
 
 	if scriptMCPConfig != nil {
-		// Use script-provided config
+		// Use script-provided mcpConfig
 		mcpConfig = scriptMCPConfig
 	} else {
-		// Load normal config
-		mcpConfig, err = config.LoadMCPConfig(configFile)
+		// Load normal mcpConfig
+		mcpConfig, err = mcpConfig.LoadMCPConfig(configFile)
 		if err != nil {
-			return fmt.Errorf("failed to load MCP config: %v", err)
+			return fmt.Errorf("failed to load MCP mcpConfig: %v", err)
 		}
 	}
 
-	// Set up viper to read from the same config file for flag values
+	// Set up viper to read from the same mcpConfig file for flag values
 	if configFile == "" {
-		// Use default config file locations
+		// Use default mcpConfig file locations
 		homeDir, err := os.UserHomeDir()
 		if err == nil {
 			viper.SetConfigName(".mcphost")
@@ -167,18 +166,18 @@ func runNormalMode(ctx context.Context) error {
 					viper.SetConfigType("yaml")
 					if err := viper.ReadInConfig(); err != nil {
 						viper.SetConfigType("json")
-						viper.ReadInConfig() // Ignore error if no config found
+						viper.ReadInConfig() // Ignore error if no mcpConfig found
 					}
 				}
 			}
 		}
 	} else {
-		// Use specified config file
+		// Use specified mcpConfig file
 		viper.SetConfigFile(configFile)
 		viper.ReadInConfig() // Ignore error if file doesn't exist
 	}
 
-	// Override flag values with config file values (using viper's bound values)
+	// Override flag values with mcpConfig file values (using viper's bound values)
 	if viper.GetString("system-prompt") != "" {
 		systemPromptFile = viper.GetString("system-prompt")
 	}
@@ -210,7 +209,7 @@ func runNormalMode(ctx context.Context) error {
 		googleAPIKey = viper.GetString("google-api-key")
 	}
 
-	systemPrompt, err := config.LoadSystemPrompt(systemPromptFile)
+	systemPrompt, err := mcpConfig.LoadSystemPrompt(systemPromptFile)
 	if err != nil {
 		return fmt.Errorf("failed to load system prompt: %v", err)
 	}
@@ -547,18 +546,18 @@ func runScriptMode(ctx context.Context) error {
 	originalOpenAIURL := openaiBaseURL
 	originalAnthropicURL := anthropicBaseURL
 
-	// Create config from script or load normal config
-	var mcpConfig *config.Config
+	// Create mcpConfig from script or load normal mcpConfig
+	var mcpConfig *mcpConfig.Config
 	if len(scriptConfig.MCPServers) > 0 {
 		// Use servers from script
 		mcpConfig = scriptConfig
 	} else {
-		// Fall back to normal config loading
-		mcpConfig, err = config.LoadMCPConfig(configFile)
+		// Fall back to normal mcpConfig loading
+		mcpConfig, err = mcpConfig.LoadMCPConfig(configFile)
 		if err != nil {
-			return fmt.Errorf("failed to load MCP config: %v", err)
+			return fmt.Errorf("failed to load MCP mcpConfig: %v", err)
 		}
-		// Merge script config values into loaded config
+		// Merge script mcpConfig values into loaded mcpConfig
 		if scriptConfig.Model != "" {
 			mcpConfig.Model = scriptConfig.Model
 		}
@@ -594,7 +593,7 @@ func runScriptMode(ctx context.Context) error {
 		}
 	}
 
-	// Override the global config for normal mode
+	// Override the global mcpConfig for normal mode
 	scriptMCPConfig = mcpConfig
 
 	// Apply script configuration to global flags
@@ -649,12 +648,12 @@ func runScriptMode(ctx context.Context) error {
 		scriptMCPConfig = nil
 	}()
 
-	// Now run the normal execution path which will use our overridden config
+	// Now run the normal execution path which will use our overridden mcpConfig
 	return runNormalMode(ctx)
 }
 
-// parseScriptFile parses a script file with YAML frontmatter and returns config
-func parseScriptFile(filename string) (*config.Config, error) {
+// parseScriptFile parses a script file with YAML frontmatter and returns mcpConfig
+func parseScriptFile(filename string) (*mcpConfig.Config, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -687,7 +686,7 @@ func readRemainingLines(scanner *bufio.Scanner) string {
 }
 
 // parseScriptContent parses the content to extract YAML frontmatter
-func parseScriptContent(content string) (*config.Config, error) {
+func parseScriptContent(content string) (*mcpConfig.Config, error) {
 	lines := strings.Split(content, "\n")
 
 	// Find YAML frontmatter
@@ -699,7 +698,7 @@ func parseScriptContent(content string) (*config.Config, error) {
 
 	// Parse YAML
 	yamlContent := strings.Join(yamlLines, "\n")
-	var scriptConfig config.Config
+	var scriptConfig mcpConfig.Config
 	if err := yaml.Unmarshal([]byte(yamlContent), &scriptConfig); err != nil {
 		return nil, fmt.Errorf("failed to parse YAML: %v", err)
 	}

@@ -1,7 +1,7 @@
 package sessions
 
 import (
-	"ai-chat/internal/agent"
+	"ai-chat/internal/pkg/agent"
 	"ai-chat/internal/pkg/chatSession"
 	"errors"
 	"fmt"

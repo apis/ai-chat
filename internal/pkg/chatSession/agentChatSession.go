@@ -1,7 +1,7 @@
 package chatSession
 
 import (
-	"ai-chat/internal/agent"
+	"ai-chat/internal/pkg/agent"
 	"context"
 	"github.com/cloudwego/eino/schema"
 	"github.com/rs/zerolog/log"

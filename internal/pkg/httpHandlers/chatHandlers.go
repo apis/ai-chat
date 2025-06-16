@@ -1,7 +1,7 @@
 package httpHandlers
 
 import (
-	"ai-chat/internal/agent"
+	"ai-chat/internal/pkg/agent"
 	"ai-chat/internal/pkg/chatSession"
 	"ai-chat/internal/pkg/cookies"
 	"ai-chat/internal/pkg/sessions"
