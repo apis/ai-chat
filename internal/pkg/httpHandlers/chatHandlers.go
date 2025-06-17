@@ -109,53 +109,6 @@ func (instance *ChatHandlers) Ask(request *http.Request, simulatedDelay int) *we
 	return web.GetEmptyResponse(http.StatusOK, headers, nil)
 }
 
-// Convert schema.Messages to ChatBlocks
-func (instance *ChatHandlers) messagesToChatBlocks(messages []*schema.Message) []chatSession.ChatBlock {
-	var chatBlocks []chatSession.ChatBlock
-
-	// Group messages into conversation blocks
-	var systemMsg, userMsg, assistantMsg string
-	var completed bool
-
-	for i, msg := range messages {
-		switch msg.Role {
-		case schema.System:
-			systemMsg = msg.Content
-		case schema.User:
-			// If we already have a user message, start a new block
-			if userMsg != "" && assistantMsg != "" {
-				chatBlocks = append(chatBlocks, chatSession.ChatBlock{
-					SystemMessage:    systemMsg,
-					UserMessage:      userMsg,
-					AssistantMessage: assistantMsg,
-					Completed:        completed,
-					Failed:           false,
-				})
-				userMsg = ""
-				assistantMsg = ""
-			}
-			userMsg = msg.Content
-			completed = false
-		case schema.Assistant:
-			assistantMsg = msg.Content
-			completed = true
-		}
-
-		// If this is the last message, add the block
-		if i == len(messages)-1 && userMsg != "" {
-			chatBlocks = append(chatBlocks, chatSession.ChatBlock{
-				SystemMessage:    systemMsg,
-				UserMessage:      userMsg,
-				AssistantMessage: assistantMsg,
-				Completed:        completed,
-				Failed:           false,
-			})
-		}
-	}
-
-	return chatBlocks
-}
-
 func (instance *ChatHandlers) chatBlockResponseHandler(id uuid.UUID) func(response chatSession.ChatBlockResponse) {
 	return func(response chatSession.ChatBlockResponse) {
 		uiResponse := ToUiSessionResponse(response)
@@ -165,7 +118,12 @@ func (instance *ChatHandlers) chatBlockResponseHandler(id uuid.UUID) func(respon
 		if err := instance.templates.ExecuteTemplate(&buffer, templateName, uiResponse); err != nil {
 			log.Error().Err(err).Str("template_name", templateName).Msg("templates.ExecuteTemplate() failed")
 		}
-		log.Debug().Str("user_message", response.ChatBlock.UserMessage).Str("assistant_message", response.ChatBlock.AssistantMessage).Msg("ChatBlockResponse")
+		log.Debug().Str("system_message", response.ChatBlock.SystemMessage).
+			Str("user_message", response.ChatBlock.UserMessage).
+			Str("assistant_message", response.ChatBlock.AssistantMessage).
+			Bool("completed", response.ChatBlock.Completed).
+			Bool("failed", response.ChatBlock.Failed).
+			Msg("ChatBlockResponse")
 		instance.notificationServer.Publish(id, buffer.Bytes())
 	}
 }
