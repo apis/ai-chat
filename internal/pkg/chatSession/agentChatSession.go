@@ -105,7 +105,14 @@ func (instance *AgentChatSession) processMessage() {
 		func(content string) {
 			// Update the chat block with the assistant's response
 			instance.messagesMutex.Lock()
-			currentChatBlock.AssistantMessage = content
+			// If there's already content (from tool call), append the new content instead of overwriting
+			if currentChatBlock.AssistantMessage != "" {
+				//if currentChatBlock.AssistantMessage != "" && currentChatBlock.AssistantMessage != content {
+				currentChatBlock.AssistantMessage = currentChatBlock.AssistantMessage + content
+				//currentChatBlock.AssistantMessage = currentChatBlock.AssistantMessage + "\n\n---\n\n" + content
+			} else {
+				currentChatBlock.AssistantMessage = content
+			}
 			currentChatBlock.Completed = true
 			instance.messagesMutex.Unlock()
 
