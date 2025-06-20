@@ -91,7 +91,44 @@ function parseRawMessage(message) {
         if (message.classList.contains('user')) {
             formatted.innerHTML = s
         } else {
-            formatted.innerHTML = marked.parse(s)
+            // Process think tags in assistant messages
+            const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
+
+            if (s.includes("<think>")) {
+                let result = "";
+                let lastIndex = 0;
+                let match;
+
+                // Reset the regex to start from the beginning
+                thinkRegex.lastIndex = 0;
+
+                // Process each segment (alternating between regular and think content)
+                while ((match = thinkRegex.exec(s)) !== null) {
+                    // Add the regular content before this think block (parsed with markdown)
+                    const regularContent = s.substring(lastIndex, match.index);
+                    if (regularContent) {
+                        result += marked.parse(regularContent);
+                    }
+
+                    // Add the think content (parsed with markdown and wrapped in styled div)
+                    const thinkContent = match[1];
+                    result += `<div class="think-content">${marked.parse(thinkContent)}</div>`;
+
+                    // Update the last index to after this think block
+                    lastIndex = match.index + match[0].length;
+                }
+
+                // Add any remaining regular content after the last think block
+                if (lastIndex < s.length) {
+                    const remainingContent = s.substring(lastIndex);
+                    result += marked.parse(remainingContent);
+                }
+
+                formatted.innerHTML = result;
+            } else {
+                // No think tags, just parse the whole content with markdown
+                formatted.innerHTML = marked.parse(s);
+            }
         }
     }
 }

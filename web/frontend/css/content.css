@@ -57,3 +57,12 @@
     background-color: hsl(13, 16%, 34%);
     line-height: 0.9rem;
 }
+
+/* Styling for think content */
+.chat-message.assistant .formatted .think-content {
+    background-color: hsl(13, 16%, 54%);
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    color: white;
+}

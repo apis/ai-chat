@@ -19,12 +19,10 @@ require (
 	github.com/mark3labs/mcp-go v0.32.0
 	github.com/ollama/ollama v0.5.12
 	github.com/rs/zerolog v1.34.0
-	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/genai v1.11.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -65,7 +63,6 @@ require (
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
 	github.com/goph/emperror v0.17.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -111,4 +108,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241223144023-3abc09e42ca8 // indirect
 	google.golang.org/grpc v1.67.3 // indirect
 	google.golang.org/protobuf v1.36.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
