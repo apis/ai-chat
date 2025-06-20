@@ -1,6 +1,7 @@
 import './htmx.js'
 import 'htmx.org/dist/ext/ws.js'
 import {marked} from 'marked'
+import 'katex'
 
 import "@fontsource/noto-sans/100.css"
 import "@fontsource/noto-sans/200.css"
@@ -81,6 +82,41 @@ document.body.addEventListener("clearUserInput", function(evt){
     userInput.value = ''
 })
 
+const renderer = new marked.Renderer();
+
+function mathsExpression(expr) {
+    if (expr.match(/^\$\$[\s\S]*\$\$$/)) {
+        expr = expr.substr(2, expr.length - 4);
+        return katex.renderToString(expr, { displayMode: true });
+    } else if (expr.match(/^\$[\s\S]*\$$/)) {
+        expr = expr.substr(1, expr.length - 2);
+        return katex.renderToString(expr, { isplayMode: false });
+    }
+}
+
+const rendererCode = renderer.code;
+renderer.code = function(code, lang, escaped) {
+    if (!lang) {
+        const math = mathsExpression(code);
+        if (math) {
+            return math;
+        }
+    }
+
+    return rendererCode(code, lang, escaped);
+};
+
+const rendererCodespan = renderer.codespan;
+renderer.codespan = function(text) {
+    const math = mathsExpression(text);
+
+    if (math) {
+        return math;
+    }
+
+    return rendererCodespan(text);
+};
+
 function parseRawMessage(message) {
     const raw = message.querySelector('.raw')
     const formatted = message.querySelector('.formatted')
@@ -107,7 +143,7 @@ function parseRawMessage(message) {
                     // Add the regular content before this think block (parsed with markdown)
                     const regularContent = s.substring(lastIndex, match.index);
                     if (regularContent) {
-                        result += marked.parse(regularContent);
+                        result += marked.parse(regularContent, { renderer: renderer });
                     }
 
                     // Add the think content (parsed with markdown and wrapped in styled div)
@@ -121,13 +157,13 @@ function parseRawMessage(message) {
                 // Add any remaining regular content after the last think block
                 if (lastIndex < s.length) {
                     const remainingContent = s.substring(lastIndex);
-                    result += marked.parse(remainingContent);
+                    result += marked(remainingContent, { renderer: renderer })
                 }
 
                 formatted.innerHTML = result;
             } else {
                 // No think tags, just parse the whole content with markdown
-                formatted.innerHTML = marked.parse(s);
+                formatted.innerHTML = marked.parse(s, { renderer: renderer });
             }
         }
     }

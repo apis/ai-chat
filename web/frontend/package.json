@@ -19,6 +19,7 @@
     "@fontsource/noto-sans": "^5.2.7",
     "@fontsource/noto-sans-mono": "^5.2.7",
     "htmx.org": "^2.0.4",
+    "katex": "^0.16.22",
     "marked": "^15.0.12"
   }
 }
