@@ -87,14 +87,15 @@ const renderer = new marked.Renderer()
 function mathsExpression(expr) {
     if (expr.match(/\$\$[\s\S]*\$\$/)) {
         console.log("------ $$")
-        expr = expr.substring(2, expr.length - 4)
+        expr = expr.substring(2, expr.length - 2)
         return katex.renderToString(expr, { displayMode: true })
     } else if (expr.match(/\$[\s\S]*\$/)) {
         console.log("------ $")
-        expr = expr.substring(1, expr.length - 2)
+        expr = expr.substring(1, expr.length - 1)
         return katex.renderToString(expr, { displayMode: false })
     }
     console.log("------")
+    return null
 }
 
 const rendererCode = renderer.code
@@ -105,7 +106,7 @@ renderer.code = function(code) {
             return math
         }
     }
-    return rendererCode(code)
+    return rendererCode.call(this, code)
 }
 
 const rendererCodespan = renderer.codespan
@@ -114,7 +115,7 @@ renderer.codespan = function(codespan) {
     if (math) {
         return math
     }
-    return rendererCodespan(codespan)
+    return rendererCodespan.call(this, codespan)
 }
 
 function parseRawMessage(message) {
@@ -147,8 +148,8 @@ function parseRawMessage(message) {
                     }
 
                     // Add the think content (parsed with markdown and wrapped in styled div)
-                    const thinkContent = match[1];
-                    result += `<div class="think-content">${marked.parse(thinkContent)}</div>`
+                    const thinkContent = match[1]
+                    result += `<div class="think-content">${marked.parse(thinkContent, { renderer: renderer })}</div>`
 
                     // Update the last index to after this think block
                     lastIndex = match.index + match[0].length
@@ -156,8 +157,8 @@ function parseRawMessage(message) {
 
                 // Add any remaining regular content after the last think block
                 if (lastIndex < s.length) {
-                    const remainingContent = s.substring(lastIndex);
-                    result += marked(remainingContent, { renderer: renderer })
+                    const remainingContent = s.substring(lastIndex)
+                    result += marked.parse(remainingContent, { renderer: renderer })
                 }
 
                 formatted.innerHTML = result
