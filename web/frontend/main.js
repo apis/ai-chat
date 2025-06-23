@@ -1,7 +1,7 @@
 import './htmx.js'
 import 'htmx.org/dist/ext/ws.js'
 import {marked} from 'marked'
-import 'katex'
+import katex from 'katex'
 
 import "@fontsource/noto-sans/100.css"
 import "@fontsource/noto-sans/200.css"
@@ -82,40 +82,40 @@ document.body.addEventListener("clearUserInput", function(evt){
     userInput.value = ''
 })
 
-const renderer = new marked.Renderer();
+const renderer = new marked.Renderer()
 
 function mathsExpression(expr) {
-    if (expr.match(/^\$\$[\s\S]*\$\$$/)) {
-        expr = expr.substr(2, expr.length - 4);
-        return katex.renderToString(expr, { displayMode: true });
-    } else if (expr.match(/^\$[\s\S]*\$$/)) {
-        expr = expr.substr(1, expr.length - 2);
-        return katex.renderToString(expr, { isplayMode: false });
+    if (expr.match(/\$\$[\s\S]*\$\$/)) {
+        console.log("------ $$")
+        expr = expr.substring(2, expr.length - 4)
+        return katex.renderToString(expr, { displayMode: true })
+    } else if (expr.match(/\$[\s\S]*\$/)) {
+        console.log("------ $")
+        expr = expr.substring(1, expr.length - 2)
+        return katex.renderToString(expr, { displayMode: false })
     }
+    console.log("------")
 }
 
-const rendererCode = renderer.code;
-renderer.code = function(code, lang, escaped) {
-    if (!lang) {
-        const math = mathsExpression(code);
+const rendererCode = renderer.code
+renderer.code = function(code) {
+    if (!code.lang) {
+        const math = mathsExpression(code.text)
         if (math) {
-            return math;
+            return math
         }
     }
+    return rendererCode(code)
+}
 
-    return rendererCode(code, lang, escaped);
-};
-
-const rendererCodespan = renderer.codespan;
-renderer.codespan = function(text) {
-    const math = mathsExpression(text);
-
+const rendererCodespan = renderer.codespan
+renderer.codespan = function(codespan) {
+    const math = mathsExpression(codespan.text)
     if (math) {
-        return math;
+        return math
     }
-
-    return rendererCodespan(text);
-};
+    return rendererCodespan(codespan)
+}
 
 function parseRawMessage(message) {
     const raw = message.querySelector('.raw')
@@ -128,30 +128,30 @@ function parseRawMessage(message) {
             formatted.innerHTML = s
         } else {
             // Process think tags in assistant messages
-            const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
+            const thinkRegex = /<think>([\s\S]*?)<\/think>/g
 
             if (s.includes("<think>")) {
-                let result = "";
-                let lastIndex = 0;
-                let match;
+                let result = ""
+                let lastIndex = 0
+                let match
 
                 // Reset the regex to start from the beginning
-                thinkRegex.lastIndex = 0;
+                thinkRegex.lastIndex = 0
 
                 // Process each segment (alternating between regular and think content)
                 while ((match = thinkRegex.exec(s)) !== null) {
                     // Add the regular content before this think block (parsed with markdown)
-                    const regularContent = s.substring(lastIndex, match.index);
+                    const regularContent = s.substring(lastIndex, match.index)
                     if (regularContent) {
-                        result += marked.parse(regularContent, { renderer: renderer });
+                        result += marked.parse(regularContent, { renderer: renderer })
                     }
 
                     // Add the think content (parsed with markdown and wrapped in styled div)
                     const thinkContent = match[1];
-                    result += `<div class="think-content">${marked.parse(thinkContent)}</div>`;
+                    result += `<div class="think-content">${marked.parse(thinkContent)}</div>`
 
                     // Update the last index to after this think block
-                    lastIndex = match.index + match[0].length;
+                    lastIndex = match.index + match[0].length
                 }
 
                 // Add any remaining regular content after the last think block
@@ -160,10 +160,10 @@ function parseRawMessage(message) {
                     result += marked(remainingContent, { renderer: renderer })
                 }
 
-                formatted.innerHTML = result;
+                formatted.innerHTML = result
             } else {
                 // No think tags, just parse the whole content with markdown
-                formatted.innerHTML = marked.parse(s, { renderer: renderer });
+                formatted.innerHTML = marked.parse(s, { renderer: renderer })
             }
         }
     }
