@@ -36,3 +36,7 @@ html, body {
     margin: 0 0;
     padding: 0 2rem;
 }
+
+.katex {
+    font-size: 1.6em;
+}

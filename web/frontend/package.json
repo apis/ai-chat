@@ -20,6 +20,7 @@
     "@fontsource/noto-sans-mono": "^5.2.7",
     "htmx.org": "^2.0.4",
     "katex": "^0.16.22",
-    "marked": "^15.0.12"
+    "marked": "^15.0.12",
+    "marked-katex-extension": "^5.1.4"
   }
 }
